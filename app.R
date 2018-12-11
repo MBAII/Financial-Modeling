@@ -8,7 +8,7 @@ source("MV_Function.R")
 
 # User interface ----
 ui <- fluidPage(
-  titlePanel("stockVis"),
+  titlePanel("Mean-Variance Portfolio"),
   
   sidebarLayout(
     sidebarPanel(
@@ -17,63 +17,72 @@ ui <- fluidPage(
       
       textInput("symb", "Symbols", "SPY,GOOG,KO"),
       
-      # dateRangeInput("dates", 
-      #                "Date range",
-      #                start = "2013-01-01", 
-      #                end = as.character(Sys.Date())),
-      # 
-      br(),
+      textInput("rf", "Fisk Free Rate", "0.02"),
+      
+      dateRangeInput("dates", 
+                     "Date range",
+                     start = "1980-01-01", 
+                     end = as.character(Sys.Date())),
+      
+      textInput("ret", "Desired Return", "0.1"),
+      
+      
+
+      # br(),
       br(),
       
       actionButton("submit", label = "Submit")
-      # 
-      # checkboxInput("log", "Plot y axis on log scale", 
-      #               value = FALSE),
-      # 
-      # checkboxInput("adjust", 
-      #               "Adjust prices for inflation", value = FALSE)
+      
     ),
     
     mainPanel(
-      plotOutput("plot"),
-      textOutput("text"))
+      tableOutput("weight"),
+      plotOutput("plot")
+      
+      # textOutput("text")
+    )
   )
 )
 
 # Server logic
 server <- function(input, output) {
-
+  
   dataInput <- reactive({
-    # getSymbols(input$symb, src = "yahoo",
-    #            from = input$dates[1],
-    #            to = input$dates[2],
-    #            auto.assign = FALSE)
+    is_click = input$submit
+    stocks <- input$symb
+    rf <- input$rf
+    message(is_click)
+    if (is_click == 1){
+      is_click = 0
+      return(mv_model(stocks,rf))
+    }
   })
 
-  output$plot <- renderPlot({
-
-    # chartSeries(dataInput(), theme = chartTheme("white"),
-    #             type = "line", log.scale = input$log, TA = NULL)
-    if (input$submit){
-      mv_model(input$symb)
-    }
+  output$weight <- renderTable({
+    dataInput()$weight
   })
   
-  output$text <- renderPrint({ 
-    observeEvent(input$submit, {
-      # print(input$symb)
-      data = input$symb
-      data_2 = unlist(strsplit(data, ","))
-      print(data)
-      print(data_2)
-      print(typeof(data_2))
-    })
-    if (input$submit){
-      "submit"
-    }else{
-      "not submit yet"
-    }
-    })
+  output$plot <- renderPlot({
+    dataInput()$plot
+  })
+  
+  
+  
+  # output$text <- renderPrint({ 
+  #   observeEvent(input$submit, {
+  #     # print(input$symb)
+  #     data = input$symb
+  #     data_2 = unlist(strsplit(data, ","))
+  #     print(data)
+  #     print(data_2)
+  #     print(typeof(data_2))
+  #   })
+  #   if (input$submit){
+  #     "submit"
+  #   }else{
+  #     "not submit yet"
+  #   }
+  #   })
 }
 
 # Run the app
