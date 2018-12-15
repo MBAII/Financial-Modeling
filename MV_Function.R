@@ -4,12 +4,15 @@ library("quantmod")
 library("alabama")
 library("ggplot2")
 
-mv_model <- function(s,rf){
+mv_model <- function(s,rf,beginDate,endDate,ret){
+  #message(ret)
+  print(beginDate)
+  print(endDate)
   rf <- as.numeric(rf)
   ##############################
   tics <- unlist(strsplit(s, ","))
   P.list <- lapply(tics, function(tic)
-    get(getSymbols(tic, from = "1980-01-01")))
+    get(getSymbols(tic, from = beginDate, to = endDate)))
   sapply(P.list,nrow)
 
   # Get the adjusted prices into a single object
@@ -122,6 +125,7 @@ mv_model <- function(s,rf){
 
   # Print the return and risk of the estimated minimum variance portfolio:
   Rmin <- rf
+  #Rmin <- ret
   Smin <- 0
   message(sprintf("Minimum variance portfolio:\n\tR = %5.4f\n\tSigma=%5.4f",Rmin,Smin))
 
@@ -130,7 +134,7 @@ mv_model <- function(s,rf){
     annotate("segment", x = 0.25, xend = Smin,y = 0.1,  yend = Rmin, colour = "orange",size=1, alpha=0.6, arrow=arrow()) +
     annotate("text", x = c(0.25), y = c(0.1),  label = c("Min Variance") , color="black", size=4 , angle=0)
 
-  #The plot the maximim return protfolio:
+  #The plot the maximim return portfolio:
   wmax <- rep(0,length=n)
   wmax[which.max(R)] <- 1
   Rmax <- R_pf(wmax,R)
@@ -142,17 +146,16 @@ mv_model <- function(s,rf){
 
   # --------------Efficient Frontier----------------
   # Constraints wi >= 0
-  # Set this in the loop because it cahnges every time
+  # Set this in the loop because it changes every time
   # sum(w) = 1
   heq <- function(x){
-    h <- sum(x) - 1
+    h <- sum(x) - 1 
     return(h)
   }
   # Set the number of portoflios along [Rmin,Rmax]
   npf <- 50
   soln <- as.data.frame(matrix(NA,ncol=2+n,nrow=npf))
-  Rconst <- seq(max(R),Rmin,length=npf)
-
+  Rconst <- seq(max(R),ret,length=npf)
 
   # Set a starting value to a feasible portfolio
   # (Note that if the feasible region changes throughout the # loop, then you will need to change x0 in the loop)
@@ -167,7 +170,8 @@ mv_model <- function(s,rf){
         h[j] <- x[j] + eps
       }
       # Define the return constraint (Note - this is # the only element that changes in the loop)
-      h[length(x)+1] <- t(x)%*%R - Rconst[i] + eps
+
+      h[length(x)+1] <- t(x)%*%R  - Rconst[i] + eps
       return(h)
     }
     # Solve the problem (the tryCatch() assures the # code will run if a single iteration returns an # error)
@@ -184,10 +188,8 @@ mv_model <- function(s,rf){
     message(sprintf("%d. %6.5f\t%6.5f\t%6.5f\t%d\t%6.5f\t%8.7f\t%d\t%d",
                     i,Rconst[i],soln[i,1],soln[i,2], tmp$outer.iterations,sum(wtmp), Rconst[i]-soln[i,1], tmp$convergence,
                     tmp$counts[1]))
-    ##for presentation, static code, delete later.
-    if(i == 5){
-      weight <- as.data.frame(matrix(c(tmp$par),nrow = 1))
-    }
+
+    weight <- as.data.frame(matrix(c(tmp$par),nrow = 1))
     
   }
 

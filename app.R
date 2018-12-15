@@ -31,7 +31,7 @@ ui <- fluidPage(
       # br(),
       br(),
       
-      actionButton("submit", label = "Submit")
+      actionButton("submit", label = "Submit/Clear")
       
     ),
     
@@ -39,7 +39,7 @@ ui <- fluidPage(
       tableOutput("weight"),
       plotOutput("plot")
       
-      # textOutput("text")
+
     )
   )
 )
@@ -51,10 +51,14 @@ server <- function(input, output) {
     is_click = input$submit
     stocks <- input$symb
     rf <- input$rf
+    ret <- as.numeric(input$ret)
+    start <- input$dates[1]
+    end <- input$dates[2]
     message(is_click)
-    if (is_click == 1){
-      is_click = 0
-      return(mv_model(stocks,rf))
+
+    if (is_click%%2 == 1){
+
+      return(mv_model(stocks,rf,start,end,ret))
     }
   })
 
@@ -66,23 +70,7 @@ server <- function(input, output) {
     dataInput()$plot
   })
   
-  
-  
-  # output$text <- renderPrint({ 
-  #   observeEvent(input$submit, {
-  #     # print(input$symb)
-  #     data = input$symb
-  #     data_2 = unlist(strsplit(data, ","))
-  #     print(data)
-  #     print(data_2)
-  #     print(typeof(data_2))
-  #   })
-  #   if (input$submit){
-  #     "submit"
-  #   }else{
-  #     "not submit yet"
-  #   }
-  #   })
+
 }
 
 # Run the app
